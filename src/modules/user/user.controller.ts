@@ -1,6 +1,6 @@
 import { PaginationDto } from './../../common/dtos/pagination.dto';
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { UserEntity } from '../../entities/user.entity';
+import { UserEntity } from './entities/user.entity';
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateUserDto } from './dto/create-user.dto';

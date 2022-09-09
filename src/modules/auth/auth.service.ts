@@ -1,7 +1,7 @@
 import { CreateUserDto } from './../user/dto/create-user.dto';
 import { LoginDto } from './dtos/login.dto';
 import { ConfigService } from '@nestjs/config';
-import { UserEntity } from './../../entities/user.entity';
+import { UserEntity } from '../user/entities/user.entity';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import {
   BadRequestException,

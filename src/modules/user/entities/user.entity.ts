@@ -1,5 +1,5 @@
 import { BeforeInsert, BeforeUpdate, Column, Entity } from 'typeorm';
-import { CoreEntity } from './core.entity';
+import { CoreEntity } from '../../../entities/core.entity';
 
 @Entity('user')
 export class UserEntity extends CoreEntity {

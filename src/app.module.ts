@@ -1,15 +1,17 @@
-import { FavoriteModule } from './modules/favorite/favorite.module';
+import { GenresModule } from './modules/genres/genres.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { RecommendationsModule } from './modules/recommendations/recommendations.module';
 
 @Module({
   imports: [
-    FavoriteModule,
-    AuthModule,
     UserModule,
+    AuthModule,
+    GenresModule,
+    RecommendationsModule,
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
