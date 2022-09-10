@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
-import { map, Observable } from 'rxjs';
+import { catchError, map, Observable, throwError } from 'rxjs';
 import { AxiosRequestHeaders, AxiosResponse } from 'axios';
-import { Recomendation } from './entities/recommendation.entity';
+import { Convert, CustomRecommendation, ResponseRecommendation } from './entities/recommendation.entity';
 
 @Injectable()
 export class RecommendationsService {
@@ -21,15 +21,32 @@ export class RecommendationsService {
 			.pipe(map(response => response.data));
 	}
 
-	getRecommendations(genres: string): Observable<Recomendation> {
+	getRecommendations(genres: string): Observable<CustomRecommendation> {
 		const headers: AxiosRequestHeaders = {
 			Authorization: `Bearer ${this.configService.get('TOKEN_SPOTIFY')}`,
 		};
 
+		// get length of genres
+		const genresLength = genres.split(',').length;
+		// if length is greater than 5, return an error message
+		if (genresLength > 5) throw new BadRequestException('You can only select up to 5 genres');
+
 		return this.httpService
-			.get<Recomendation>(`/recommendations?seed_genres=${genres}`, {
+			.get<ResponseRecommendation>(`/recommendations?seed_genres=${genres}`, {
 				headers,
 			})
-			.pipe(map(response => response.data));
+
+			.pipe(
+				catchError((err) => {
+					if (err?.response?.status === 401) {
+						return throwError(err?.response?.statusText);
+					}
+					return throwError(err);
+				}),
+				map(response => {
+					if (response.status === 200) {
+						return Convert.responseRecommendationToCustomRecommendation(response.data);
+					}
+				}));
 	}
 }

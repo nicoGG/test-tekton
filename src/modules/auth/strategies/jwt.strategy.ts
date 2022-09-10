@@ -5,7 +5,6 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/modules/user/entities/user.entity';
 import { Repository } from 'typeorm';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -15,13 +14,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		configService: ConfigService,
 	) {
 		super({
-			secretOrKey: configService.get('JWT_SECRET'),
+			secretOrKey: process.env.JWT_SECRET || configService.get('JWT_SECRET'),
+			ignoreExpiration: false,
 			jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
 		});
 	}
 
-	async validate(payload: JwtPayload) {
-		const { id } = payload;
+	async validate({ id, exp, iat }: Record<string, any>) {
+		const timeDiff = exp - iat;
+		if (timeDiff <= 0) {
+			throw new UnauthorizedException('Token expired');
+		}
 		const user = await this.userRepository.findOneBy({ id });
 		if (!user) throw new UnauthorizedException('Unauthorized user');
 		return user;

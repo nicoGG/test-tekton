@@ -26,16 +26,23 @@ export class AuthService {
 	) {
 	}
 
+
 	async loginUser(loginDto: LoginDto) {
 		const { username, password } = loginDto;
 		const foundUser = await this.userRepository.findOneBy({ username: username });
 		if (!foundUser) throw new NotFoundException('User not found');
 		if (!(await BcryptPassword.compare(foundUser.password, password)))
 			throw new UnauthorizedException('Invalid password');
+
 		return {
-			...foundUser,
+			// ...foundUser,
 			token: this.createJwt(foundUser).token,
 		};
+	}
+
+	async getAuthenticatedUser(user: UserEntity) {
+		const { password, ...userData } = user;
+		return user;
 	}
 
 	async registerUser(createUserDto: CreateUserDto) {
@@ -70,18 +77,48 @@ export class AuthService {
 		};
 	}
 
+	async checkAuthStatusOk(token: string) {
+		const payload = await this.verifyAndDecodePayload(token);
+
+		const user = await this.validateJwtPayload(payload);
+		if (!user) {
+			throw new UnauthorizedException('Invalid token, user not found');
+		}
+		// return user;
+
+		return {
+			...user,
+			token: this.createJwt(user).token,
+		};
+	}
+
+	async verifyAndDecodePayload(token: string): Promise<JwtPayload> {
+		const secret = this.configService.get('JWT_SECRET');
+
+		const verified = await this.jwtService.verify(token, { secret });
+
+		return verified as JwtPayload;
+	}
+
 	async validateJwtPayload(payload: JwtPayload): Promise<UserEntity> {
 		const { id } = payload;
 		const user = await this.userRepository.findOneBy({ id });
+		if (!user) {
+			throw new UnauthorizedException(
+				'Could not authenticate. Please try again',
+			);
+		}
 		return user;
 	}
 
 	createJwt(user: UserEntity): { data: JwtPayload; token: string } {
-		const expiresIn = this.configService.get('JWT_EXPIRES_IN');
+		const expiresIn = Number(process.env.JWT_EXPIRES_IN) || this.configService.get('JWT_EXPIRES_IN');
 		let expiration: Date | undefined;
 		if (expiresIn) {
+			// set expiration date in days
 			expiration = new Date();
-			expiration.setTime(expiration.getTime() + expiresIn * 1000);
+			// add 1 day to expiration date
+			expiration.setDate(expiration.getDate() + expiresIn);
 		}
 		const data: JwtPayload = {
 			id: user.id,
@@ -94,7 +131,6 @@ export class AuthService {
 
 	private handleDBErrors(error: any): never {
 		if (error.code === '23505') throw new BadRequestException(error.detail);
-		console.log(error);
 		if (error?.message === 'User already exists') {
 			// exception user already exists
 			throw new UnauthorizedException(error.message);

@@ -1,0 +1,6 @@
+FROM node:gallium-alpine
+COPY . /app
+WORKDIR /app
+RUN npm install --force
+EXPOSE 3000
+ENTRYPOINT [ "npm", "run", "start:dev" ]

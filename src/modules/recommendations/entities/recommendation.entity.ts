@@ -3,11 +3,27 @@
 //   import { Convert, Recomendation } from "./file";
 //
 //   const recomendation = Convert.toRecomendation(json);
+// import lodash
+import * as _ from 'lodash';
 
-export interface Recomendation {
+export interface CustomSeed extends Pick<Seed, 'type' | 'id'> {
+}
+
+// interface CustomTrack with type, uri, track_number, name, popularity, id, album, artists, disk_number, duration_ms.
+export interface CustomTrack extends Pick<Track, 'type' | 'uri' | 'track_number' | 'name' | 'popularity' | 'id' | 'album' | 'artists' | 'disc_number' | 'duration_ms'> {
+}
+
+export interface ResponseRecommendation {
 	tracks: Track[];
 	seeds: Seed[];
 }
+
+export interface CustomRecommendation {
+	principalTrack: CustomTrack;
+	tracks: CustomTrack[];
+	genres: CustomSeed[];
+}
+
 
 export interface Seed {
 	initialPoolSize: number;
@@ -15,7 +31,6 @@ export interface Seed {
 	afterRelinkingSize: number;
 	id: string;
 	type: string;
-	href: null;
 }
 
 export interface Track {
@@ -101,11 +116,23 @@ export enum TrackType {
 
 // Converts JSON strings to/from your types
 export class Convert {
-	public static toRecomendation(json: string): Recomendation {
-		return JSON.parse(json);
+	public static responseRecommendationToCustomRecommendation(res: ResponseRecommendation): CustomRecommendation {
+		// get one random track from the list of tracks
+		const principal = _.sample(res.tracks);
+		// get the list of tracks without the principal track
+		const tracks = _.without(res.tracks, principal);
+		// get the list of seeds in the format {type, id}
+		const seeds: CustomSeed[] = _.map(res.seeds, (seed: Seed) => _.pick(seed, ['type', 'id']));
+
+
+		return {
+			tracks,
+			principalTrack: principal,
+			genres: seeds,
+		};
 	}
 
-	public static recomendationToJson(value: Recomendation): string {
+	public static recommendationToJson(value: ResponseRecommendation): string {
 		return JSON.stringify(value);
 	}
 }

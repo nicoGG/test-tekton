@@ -1,7 +1,8 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { RecommendationsService } from './recommendations.service';
-import { Recomendation } from './entities/recommendation.entity';
+import { CustomRecommendation } from './entities/recommendation.entity';
 import { Observable } from 'rxjs';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('recommendations')
 export class RecommendationsController {
@@ -9,12 +10,14 @@ export class RecommendationsController {
 	}
 
 	@Get(':genre')
+	@UseGuards(JwtAuthGuard)
 	getRecommendationsByGenre(@Param('genre') genre: string) {
 		return this.recommendationsService.getRecommendationsByGenre(genre);
 	}
 
 	@Get()
-	getRecommendations(@Query('genres') genres: string): Observable<Recomendation> {
+	@UseGuards(JwtAuthGuard)
+	getRecommendations(@Query('genres') genres: string): Observable<CustomRecommendation> {
 		return this.recommendationsService.getRecommendations(genres);
 	}
 }

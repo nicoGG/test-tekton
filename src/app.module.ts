@@ -16,16 +16,9 @@ import { HealthModule } from './modules/health/health.module';
 		ConfigModule.forRoot(),
 		TypeOrmModule.forRoot({
 			type: 'postgres',
-			host: process.env.DB_HOST,
-			port: +process.env.DB_PORT,
-			username: process.env.DB_USER,
-			password: process.env.DB_PASSWORD,
-			database: process.env.DB_NAME,
-			entities: [__dirname + '/**/*.entity{.ts,.js}'],
+			url: `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}?schema=public`,
+			autoLoadEntities: true,
 			synchronize: true,
-			ssl: {
-				rejectUnauthorized: false,
-			},
 		}),
 		HealthModule,
 	],
