@@ -8,21 +8,23 @@ import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+	constructor(private readonly authService: AuthService) {
+	}
 
-  @Post('login')
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.loginUser(loginDto);
-  }
+	@Post('login')
+	login(@Body() loginDto: LoginDto) {
+		return this.authService.loginUser(loginDto);
+	}
 
-  @Post('register')
-  register(@Body() createUserDto: CreateUserDto) {
-    return this.authService.registerUser(createUserDto);
-  }
+	@Post('register')
+	register(@Body() createUserDto: CreateUserDto) {
+		return this.authService.registerUser(createUserDto);
+	}
 
-  @Get('check-status')
-  @UseGuards(AuthGuard())
-  checkAuthStatus(@GetUser() user: UserEntity) {
-    return this.authService.checkAuthStatus(user);
-  }
+	@Get('check-status')
+	@UseGuards(AuthGuard('jwt'))
+	checkAuthStatus(@GetUser() user: UserEntity) {
+		console.log('NICOPENEOE', user);
+		return this.authService.checkAuthStatus(user);
+	}
 }

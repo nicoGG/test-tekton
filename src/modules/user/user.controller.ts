@@ -7,16 +7,17 @@ import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+	constructor(private readonly userService: UserService) {
+	}
 
-  @Get()
-  @UseGuards(AuthGuard())
-  getAllUsers(@Query() paginationDto: PaginationDto): Promise<UserEntity[]> {
-    return this.userService.findAll(paginationDto);
-  }
+	@Get()
+	@UseGuards(AuthGuard())
+	getAllUsers(@Query() paginationDto: PaginationDto): Promise<UserEntity[]> {
+		return this.userService.findAll(paginationDto);
+	}
 
-  @Post()
-  createUser(@Body() createUserDto: CreateUserDto): Promise<UserEntity> {
-    return this.userService.createUser(createUserDto);
-  }
+	@Post()
+	createUser(@Body() createUserDto: CreateUserDto): Promise<UserEntity> {
+		return this.userService.createUser(createUserDto);
+	}
 }

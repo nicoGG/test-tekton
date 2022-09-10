@@ -1,20 +1,15 @@
-import {
-  CreateDateColumn,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-  VersionColumn,
-} from 'typeorm';
+import { CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from 'typeorm';
 
 export abstract class CoreEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+	@PrimaryGeneratedColumn('uuid')
+	id: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+	@CreateDateColumn()
+	createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+	@UpdateDateColumn()
+	updatedAt: Date;
 
-  @VersionColumn({ default: 1 })
-  version: number;
+	@VersionColumn({ default: 1 })
+	version: number;
 }
