@@ -1,16 +1,11 @@
-// To parse this data:
-//
-//   import { Convert, Recomendation } from "./file";
-//
-//   const recomendation = Convert.toRecomendation(json);
-// import lodash
 import * as _ from 'lodash';
 
-export interface CustomSeed extends Pick<Seed, 'type' | 'id'> {
-}
+export interface CustomSeed extends Pick<Seed, 'type' | 'id'> {}
 
-// interface CustomTrack with type, uri, track_number, name, popularity, id, album, artists, disk_number, duration_ms.
-export interface CustomTrack extends Pick<Track, 'type' | 'uri' | 'track_number' | 'name' | 'popularity' | 'id' | 'album' | 'artists' | 'disc_number' | 'duration_ms'> {
+export const pickFromTrack = 'uri' || 'name' || 'preview_url' || 'id' || 'artists' || 'duration_ms';
+
+export interface CustomTrack extends Pick<Track, typeof pickFromTrack> {
+	album: Partial<CustomAlbum>;
 }
 
 export interface ResponseRecommendation {
@@ -23,7 +18,6 @@ export interface CustomRecommendation {
 	tracks: CustomTrack[];
 	genres: CustomSeed[];
 }
-
 
 export interface Seed {
 	initialPoolSize: number;
@@ -52,6 +46,10 @@ export interface Track {
 	type: TrackType;
 	uri: string;
 }
+
+export const omitFromAlbum = 'available_markets' || 'type' || 'total_tracks' || 'release_date_precision' || 'album_type';
+
+export interface CustomAlbum extends Omit<Album, typeof omitFromAlbum> {}
 
 export interface Album {
 	album_type: AlbumType;
@@ -114,20 +112,26 @@ export enum TrackType {
 	Track = 'track',
 }
 
-// Converts JSON strings to/from your types
 export class Convert {
+	private static toRR(track: Partial<CustomTrack>): CustomTrack {
+		return <CustomTrack>_.pick(track, typeof pickFromTrack && 'album');
+	}
+
+	private static quitAMarketsFromTrack(track: CustomTrack): CustomTrack {
+		return {
+			...track,
+			album: _.omit(track.album, omitFromAlbum),
+		};
+	}
+
 	public static responseRecommendationToCustomRecommendation(res: ResponseRecommendation): CustomRecommendation {
-		// get one random track from the list of tracks
-		const principal = _.sample(res.tracks);
-		// get the list of tracks without the principal track
-		const tracks = _.without(res.tracks, principal);
-		// get the list of seeds in the format {type, id}
+		const sample = _.sample(res.tracks);
+		const principal = this.quitAMarketsFromTrack(sample);
+		const tracks = _.without(res.tracks, sample).map(s => this.toRR(this.quitAMarketsFromTrack(s)));
 		const seeds: CustomSeed[] = _.map(res.seeds, (seed: Seed) => _.pick(seed, ['type', 'id']));
-
-
 		return {
 			tracks,
-			principalTrack: principal,
+			principalTrack: this.toRR(principal),
 			genres: seeds,
 		};
 	}

@@ -3,14 +3,17 @@ import { GenresService } from './genres.service';
 import { GenreType } from './interfaces';
 import { Observable } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SpotifyGuard } from '../auth/guards/spotify-access.guard';
 
 @Controller('genres')
 export class GenresController {
-	constructor(private readonly genresService: GenresService) {}
+	constructor(private readonly genresService: GenresService) {
+	}
 
 	@Get()
 	@UseGuards(JwtAuthGuard)
-	getAllGenres(): Observable<GenreType[]> {
+	@UseGuards(SpotifyGuard)
+	getAllGenres(): Promise<Observable<GenreType[]>> {
 		return this.genresService.getAllGenres();
 	}
 }

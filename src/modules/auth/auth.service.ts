@@ -5,6 +5,8 @@ import { UserEntity } from '../user/entities/user.entity';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import {
 	BadRequestException,
+	CACHE_MANAGER,
+	Inject,
 	Injectable,
 	InternalServerErrorException,
 	NotFoundException,
@@ -14,6 +16,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { BcryptPassword } from '../../common/utils/hashing';
+// import axios
+import axios, { AxiosResponse } from 'axios';
+import { Cache } from 'cache-manager';
+import { SpotifyInterface } from './interfaces/spotify.interface';
 
 
 @Injectable()
@@ -23,25 +29,40 @@ export class AuthService {
 		private readonly userRepository: Repository<UserEntity>,
 		private readonly jwtService: JwtService,
 		private readonly configService: ConfigService,
+		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 	) {
 	}
 
-
 	async loginUser(loginDto: LoginDto) {
 		const { username, password } = loginDto;
+		const redisUser = await this.cacheManager.get<string>(`${username}_${password}`);
+		if (redisUser) {
+			return JSON.parse(redisUser);
+		}
+
 		const foundUser = await this.userRepository.findOneBy({ username: username });
 		if (!foundUser) throw new NotFoundException('User not found');
 		if (!(await BcryptPassword.compare(foundUser.password, password)))
 			throw new UnauthorizedException('Invalid password');
 
+		const token = this.createJwt(foundUser).token;
+
+		await this.cacheManager.set(`logged_user_${foundUser.id}`, JSON.stringify({ token }), { ttl: 60 * 60 * 24 });
+
 		return {
 			// ...foundUser,
-			token: this.createJwt(foundUser).token,
+			token,
 		};
 	}
 
 	async getAuthenticatedUser(user: UserEntity) {
-		const { password, ...userData } = user;
+		const redisUser = await this.cacheManager.get<string>(`current_user_${user.id}`);
+		if (redisUser) {
+			return JSON.parse(redisUser);
+		} else if (Object.keys(user).length > 0) {
+			await this.cacheManager.set(`current_user_${user.id}`, JSON.stringify(user), { ttl: 60 * 60 * 24 });
+			return user;
+		}
 		return user;
 	}
 
@@ -104,9 +125,7 @@ export class AuthService {
 		const { id } = payload;
 		const user = await this.userRepository.findOneBy({ id });
 		if (!user) {
-			throw new UnauthorizedException(
-				'Could not authenticate. Please try again',
-			);
+			throw new UnauthorizedException('Could not authenticate. Please try again');
 		}
 		return user;
 	}
@@ -117,7 +136,7 @@ export class AuthService {
 		if (expiresIn) {
 			// set expiration date in days
 			expiration = new Date();
-			// add 1 day to expiration date
+			// add 12 hours to expiration date
 			expiration.setDate(expiration.getDate() + expiresIn);
 		}
 		const data: JwtPayload = {
@@ -131,10 +150,43 @@ export class AuthService {
 
 	private handleDBErrors(error: any): never {
 		if (error.code === '23505') throw new BadRequestException(error.detail);
-		if (error?.message === 'User already exists') {
-			// exception user already exists
-			throw new UnauthorizedException(error.message);
-		}
+		if (error?.message === 'User already exists') throw new UnauthorizedException(error.message);
 		throw new InternalServerErrorException('Please check server logs');
+	}
+
+
+	static async validateSpotifyToken(token: string): Promise<boolean> {
+		const url = 'https://api.spotify.com/v1/browse/new-releases?country=US&limit=1';
+		const config = {
+			url,
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			method: 'GET',
+		};
+
+		const response = await axios(config);
+
+		return response.status === 200;
+	}
+
+	static async getSpotifyToken(): Promise<[string, number]> {
+		const authOptions = {
+			url: 'https://accounts.spotify.com/api/token',
+			method: 'POST',
+			headers: {
+				Authorization: 'Basic ' + Buffer.from(process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET).toString('base64'),
+				'content-type': 'application/x-www-form-urlencoded',
+			},
+			data: 'grant_type=client_credentials',
+		};
+
+		const response: AxiosResponse<SpotifyInterface> = await axios(authOptions);
+
+		if (response.status !== 200) throw new InternalServerErrorException('Spotify login failed');
+
+		const { access_token, expires_in } = response.data;
+
+		return [access_token, expires_in];
 	}
 }

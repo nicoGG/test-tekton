@@ -1,21 +1,34 @@
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { AxiosRequestHeaders } from 'axios';
 import { axiosGenreResponse, GenreType } from './interfaces';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class GenresService {
 	constructor(
 		private readonly httpService: HttpService,
 		private readonly configService: ConfigService,
+		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 	) {
 	}
 
-	getAllGenres(): Observable<GenreType[]> {
+	async getAllGenres(): Promise<Observable<GenreType[]>> {
+		const redisGenres = await this.cacheManager.get<string>('genres');
+		const redisToken = await this.cacheManager.get<string>('spotify_access_token');
+
+		if (redisGenres) {
+			const typed = JSON.parse(redisGenres) as GenreType[];
+			return new Observable((observer) => {
+				observer.next(typed);
+				observer.complete();
+			});
+		}
+
 		const headers: AxiosRequestHeaders = {
-			Authorization: `Bearer ${this.configService.get('TOKEN_SPOTIFY')}`,
+			Authorization: `Bearer ${redisToken}`,
 		}, cfg = { headers };
 
 		return this.httpService
@@ -27,7 +40,10 @@ export class GenresService {
 					}
 					return throwError(err);
 				}),
-				map((response) => response.data.genres),
+				map((response) => {
+					this.cacheManager.set('genres', JSON.stringify(response.data.genres), { ttl: 7200 });
+					return response.data.genres;
+				}),
 			);
 
 	}

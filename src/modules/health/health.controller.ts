@@ -1,5 +1,6 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { HealthService } from './health.service';
+import { SpotifyGuard } from '../auth/guards/spotify-access.guard';
 
 @Controller('health')
 export class HealthController {
@@ -7,6 +8,7 @@ export class HealthController {
 	}
 
 	@Get()
+	@UseGuards(SpotifyGuard)
 	getAllGenres() {
 		return this.healthService.getHealthResponse();
 	}

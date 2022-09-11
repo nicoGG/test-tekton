@@ -3,6 +3,9 @@ import { RecommendationsService } from './recommendations.service';
 import { CustomRecommendation } from './entities/recommendation.entity';
 import { Observable } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SpotifyGuard } from '../auth/guards/spotify-access.guard';
+import { GetUser } from '../auth/decorators';
+import { UserEntity } from '../user/entities/user.entity';
 
 @Controller('recommendations')
 export class RecommendationsController {
@@ -11,13 +14,21 @@ export class RecommendationsController {
 
 	@Get(':genre')
 	@UseGuards(JwtAuthGuard)
-	getRecommendationsByGenre(@Param('genre') genre: string) {
-		return this.recommendationsService.getRecommendationsByGenre(genre);
+	@UseGuards(SpotifyGuard)
+	getRecommendationsByGenre(
+		@GetUser() user: UserEntity,
+		@Param('genre') genre: string,
+	) {
+		return this.recommendationsService.getRecommendationsByGenre(genre, user);
 	}
 
 	@Get()
 	@UseGuards(JwtAuthGuard)
-	getRecommendations(@Query('genres') genres: string): Observable<CustomRecommendation> {
-		return this.recommendationsService.getRecommendations(genres);
+	@UseGuards(SpotifyGuard)
+	getRecommendations(
+		@GetUser() user: UserEntity,
+		@Query('genres',
+		) genres: string): Promise<Observable<CustomRecommendation>> {
+		return this.recommendationsService.getRecommendations(genres, user);
 	}
 }

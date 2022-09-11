@@ -1,29 +1,51 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, CACHE_MANAGER, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { catchError, map, Observable, throwError } from 'rxjs';
-import { AxiosRequestHeaders, AxiosResponse } from 'axios';
+import { AxiosRequestHeaders } from 'axios';
 import { Convert, CustomRecommendation, ResponseRecommendation } from './entities/recommendation.entity';
+import { Cache } from 'cache-manager';
+import { UserEntity } from '../user/entities/user.entity';
 
 @Injectable()
 export class RecommendationsService {
-	constructor(private readonly httpService: HttpService, private readonly configService: ConfigService) {
+	constructor(
+		private readonly httpService: HttpService,
+		private readonly configService: ConfigService,
+		@Inject(CACHE_MANAGER) private cacheManager: Cache,
+	) {
 	}
 
-	getRecommendationsByGenre(genre: string): Observable<AxiosResponse<any>> {
+	async getRecommendationsByGenre(genre: string, user: UserEntity): Promise<Observable<CustomRecommendation>> {
+		const redisToken = await this.cacheManager.get<string>('spotify_access_token');
 		const headers: AxiosRequestHeaders = {
-			Authorization: `Bearer ${this.configService.get('TOKEN_SPOTIFY')}`,
+			Authorization: `Bearer ${redisToken}`,
 		};
 		return this.httpService
 			.get(`/recommendations?seed_genres=${genre}`, {
 				headers,
 			})
-			.pipe(map(response => response.data));
+			.pipe(map(response => {
+				if (response.status === 200) {
+					this.cacheManager.set('recommendations', JSON.stringify(response.data), { ttl: 7200 });
+					return response.data;
+				}
+				throw new InternalServerErrorException('Something went wrong');
+			}));
 	}
 
-	getRecommendations(genres: string): Observable<CustomRecommendation> {
+	async getRecommendations(genres: string, user: UserEntity): Promise<Observable<CustomRecommendation>> {
+		const recommendationsByUser = await this.cacheManager.get<string>(`recommendations_${user.id}`);
+		if (recommendationsByUser) {
+			const typed = JSON.parse(recommendationsByUser) as CustomRecommendation;
+			return new Observable((observer) => {
+				observer.next(typed);
+				observer.complete();
+			});
+		}
+		const redisToken = await this.cacheManager.get<string>('spotify_access_token');
 		const headers: AxiosRequestHeaders = {
-			Authorization: `Bearer ${this.configService.get('TOKEN_SPOTIFY')}`,
+			Authorization: `Bearer ${redisToken}`,
 		};
 
 		// get length of genres
@@ -35,7 +57,6 @@ export class RecommendationsService {
 			.get<ResponseRecommendation>(`/recommendations?seed_genres=${genres}`, {
 				headers,
 			})
-
 			.pipe(
 				catchError((err) => {
 					if (err?.response?.status === 401) {
@@ -45,7 +66,11 @@ export class RecommendationsService {
 				}),
 				map(response => {
 					if (response.status === 200) {
-						return Convert.responseRecommendationToCustomRecommendation(response.data);
+						const parsedResponse = Convert.responseRecommendationToCustomRecommendation(response.data);
+						// `recommendations_${user.id}`
+						this.cacheManager.set(`recommendations_${user.id}`, JSON.stringify(parsedResponse), { ttl: 30 });
+
+						return parsedResponse;
 					}
 				}));
 	}
