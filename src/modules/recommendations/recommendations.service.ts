@@ -33,8 +33,9 @@ export class RecommendationsService {
 	}
 
 	async getRecommendations(genres: string, user: UserEntity): Promise<Observable<CustomRecommendation>> {
+		const redisUser = await this.cacheManager.get<string>(`current_user_${user.id}`);
 		const recommendationsByUser = await this.cacheManager.get<string>(`recommendations_${user.id}`);
-		if (recommendationsByUser) {
+		if (recommendationsByUser && JSON.parse(redisUser).favorites.length < user.favorites.length) {
 			const typed = JSON.parse(recommendationsByUser) as CustomRecommendation;
 			return new Observable(observer => {
 				observer.next(typed);

@@ -44,13 +44,13 @@ export class AuthService {
 	}
 
 	async getAuthenticatedUser(user: UserEntity) {
-		const redisUser = await this.cacheManager.get<string>(`current_user_${user.id}`);
-		if (redisUser) {
-			return JSON.parse(redisUser);
-		} else if (Object.keys(user).length > 0) {
-			await this.cacheManager.set(`current_user_${user.id}`, JSON.stringify(user), { ttl: 60 * 60 * 24 });
-			return user;
-		}
+		// const redisUser = await this.cacheManager.get<string>(`current_user_${user.id}`);
+		// if (redisUser) {
+		// 	return JSON.parse(redisUser);
+		// } else if (Object.keys(user).length > 0) {
+		// 	await this.cacheManager.set(`current_user_${user.id}`, JSON.stringify(user), { ttl: 60 * 60 * 24 });
+		// 	return user;
+		// }
 		return user;
 	}
 

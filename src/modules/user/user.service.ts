@@ -55,6 +55,7 @@ export class UserService {
 			const favs = updateUserDto.favorites.map(fav => fav.toLowerCase());
 			if (favs.length > 5) throw new BadRequestException('Max 5 favorites');
 			user.favorites = favs;
+			await this.cacheManager.set<string>(`current_user_${user.id}`, JSON.stringify(user), { ttl: 300 });
 			await this.userRepository.save(user);
 			return user;
 		} catch (error) {
