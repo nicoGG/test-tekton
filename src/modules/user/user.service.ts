@@ -53,7 +53,9 @@ export class UserService {
 		try {
 			const user = await this.findOne(id);
 			if (!user) throw new NotFoundException('User not found');
-			user.favorites = updateUserDto.favorites;
+			user.favorites = updateUserDto.favorites.map(fav =>
+				fav.toLowerCase(),
+			);
 			await this.userRepository.save(user);
 			return user;
 		} catch (error) {
