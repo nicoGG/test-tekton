@@ -9,26 +9,19 @@ import { UserEntity } from '../user/entities/user.entity';
 
 @Controller('recommendations')
 export class RecommendationsController {
-	constructor(private readonly recommendationsService: RecommendationsService) {
-	}
+	constructor(private readonly recommendationsService: RecommendationsService) {}
 
 	@Get(':genre')
 	@UseGuards(JwtAuthGuard)
 	@UseGuards(SpotifyGuard)
-	getRecommendationsByGenre(
-		@GetUser() user: UserEntity,
-		@Param('genre') genre: string,
-	) {
+	getRecommendationsByGenre(@GetUser() user: UserEntity, @Param('genre') genre: string) {
 		return this.recommendationsService.getRecommendationsByGenre(genre, user);
 	}
 
 	@Get()
 	@UseGuards(JwtAuthGuard)
 	@UseGuards(SpotifyGuard)
-	getRecommendations(
-		@GetUser() user: UserEntity,
-		@Query('genres',
-		) genres: string): Promise<Observable<CustomRecommendation>> {
+	getRecommendations(@GetUser() user: UserEntity, @Query('genres') genres: string): Promise<Observable<CustomRecommendation>> {
 		return this.recommendationsService.getRecommendations(genres, user);
 	}
 }

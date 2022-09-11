@@ -4,8 +4,7 @@ import { SpotifyGuard } from '../auth/guards/spotify-access.guard';
 
 @Controller('health')
 export class HealthController {
-	constructor(private readonly healthService: HealthService) {
-	}
+	constructor(private readonly healthService: HealthService) {}
 
 	@Get()
 	@UseGuards(SpotifyGuard)

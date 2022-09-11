@@ -7,8 +7,7 @@ import { SpotifyGuard } from '../auth/guards/spotify-access.guard';
 
 @Controller('genres')
 export class GenresController {
-	constructor(private readonly genresService: GenresService) {
-	}
+	constructor(private readonly genresService: GenresService) {}
 
 	@Get()
 	@UseGuards(JwtAuthGuard)

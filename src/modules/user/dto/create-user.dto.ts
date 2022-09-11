@@ -18,7 +18,6 @@ export class CreateUserDto {
 	@Matches(/(?:(?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/)
 	password: string;
 
-	// add favorites section which is an array of strings
 	@IsOptional()
 	@IsString({ each: true })
 	favorites?: string[];

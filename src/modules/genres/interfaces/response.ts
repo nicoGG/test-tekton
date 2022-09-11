@@ -4,5 +4,4 @@ interface GenreResponse {
 	genres: GenreType[];
 }
 
-export interface axiosGenreResponse extends GenreResponse {
-}
+export interface axiosGenreResponse extends GenreResponse {}

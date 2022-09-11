@@ -9,11 +9,7 @@ import { Cache } from 'cache-manager';
 
 @Controller('users')
 export class UserController {
-	constructor(
-		private readonly userService: UserService,
-		@Inject(CACHE_MANAGER) private cacheManager: Cache,
-	) {
-	}
+	constructor(private readonly userService: UserService, @Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
 	@Get()
 	@UseGuards(JwtAuthGuard)

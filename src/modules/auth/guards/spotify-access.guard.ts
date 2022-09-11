@@ -1,10 +1,7 @@
-// const response = '';
-
 import { CACHE_MANAGER, CanActivate, ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthService } from '../auth.service';
 import { Cache } from 'cache-manager';
-
 
 // try {
 //     if (!(await AuthService.validateSpotifyToken(process.env.SPOTIFY_ACCESS_TOKEN))) {
@@ -18,11 +15,7 @@ import { Cache } from 'cache-manager';
 
 @Injectable()
 export class SpotifyGuard implements CanActivate {
-	constructor(
-		private reflector: Reflector,
-		@Inject(CACHE_MANAGER) private cacheManager: Cache,
-	) {
-	}
+	constructor(private reflector: Reflector, @Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
 	private async checkToken(token: string) {
 		return await AuthService.validateSpotifyToken(token);
@@ -34,9 +27,7 @@ export class SpotifyGuard implements CanActivate {
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const token = await this.cacheManager.get<string>('spotify_access_token');
-		if (token) {
-			return true;
-		}
+		if (token) return true;
 		const [newToken, expiresIn] = await this.getNewToken();
 		await this.cacheManager.set('spotify_access_token', newToken, { ttl: expiresIn });
 		return !!newToken;

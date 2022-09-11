@@ -1,13 +1,6 @@
 import { CreateUserDto } from './dto/create-user.dto';
 import { PaginationDto } from './../../common/dtos/pagination.dto';
-import {
-	BadRequestException,
-	CACHE_MANAGER,
-	Inject,
-	Injectable,
-	InternalServerErrorException,
-	NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, CACHE_MANAGER, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
@@ -21,8 +14,7 @@ export class UserService {
 		@InjectRepository(UserEntity)
 		private readonly userRepository: Repository<UserEntity>,
 		@Inject(CACHE_MANAGER) private cacheManager: Cache,
-	) {
-	}
+	) {}
 
 	async findAll(pagination: PaginationDto): Promise<UserEntity[]> {
 		const { limit = 10, offset = 0 } = pagination;
@@ -33,11 +25,9 @@ export class UserService {
 		const usersFound = await this.userRepository.find({
 			take: limit,
 			skip: offset,
-			// order: { createdAt: 'DESC' },
 			order: { id: 'DESC' },
 		});
 		await this.cacheManager.set('allUsers', JSON.stringify(usersFound), { ttl: 300 });
-
 		return usersFound;
 	}
 
@@ -61,17 +51,10 @@ export class UserService {
 	async updateUserFavorites(id: string, updateUserDto: UpdateUserDto): Promise<UserEntity> {
 		try {
 			const user = await this.findOne(id);
-
 			if (!user) throw new NotFoundException('User not found');
-
 			const favs = updateUserDto.favorites.map(fav => fav.toLowerCase());
-
 			if (favs.length > 5) throw new BadRequestException('Max 5 favorites');
-
-			// assign new favorites
 			user.favorites = favs;
-
-			// save user
 			await this.userRepository.save(user);
 			return user;
 		} catch (error) {
@@ -81,9 +64,7 @@ export class UserService {
 
 	private handleDBException(error: any) {
 		if (error.code === '23505') throw new BadRequestException(error.detail);
-
 		if (error?.message == 'User not found') throw new NotFoundException(error.message);
-
 		throw new InternalServerErrorException('Unexpected error, check server logs');
 	}
 }

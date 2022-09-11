@@ -10,19 +10,7 @@ import { SpotifyGuard } from './guards/spotify-access.guard';
 
 @Controller('auth')
 export class AuthController {
-	constructor(private readonly authService: AuthService,
-	) {
-	}
-
-	async generateRandomString(length: number) {
-		let text = '';
-		const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-		for (let i = 0; i < length; i++) {
-			text += possible.charAt(Math.floor(Math.random() * possible.length));
-		}
-		return text;
-	}
+	constructor(private readonly authService: AuthService) {}
 
 	@Public()
 	@Post('login')
