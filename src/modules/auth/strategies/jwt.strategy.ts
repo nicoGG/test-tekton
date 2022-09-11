@@ -22,9 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
 	async validate({ id, exp, iat }: Record<string, any>) {
 		const timeDiff = exp - iat;
-		if (timeDiff <= 0) {
-			throw new UnauthorizedException('Token expired');
-		}
+		if (timeDiff <= 0) throw new UnauthorizedException('Token expired');
 		const user = await this.userRepository.findOneBy({ id });
 		if (!user) throw new UnauthorizedException('Unauthorized user');
 		return user;

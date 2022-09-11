@@ -5,12 +5,8 @@ export class CreateUserDto {
 	@MinLength(4)
 	username: string;
 
-	@IsEmail({
-		allow_display_name: true,
-	}, { message: 'Email must be a valid email' })
-	@IsString(
-		{ message: 'Email must be a string' },
-	)
+	@IsEmail({ allow_display_name: true }, { message: 'Email must be a valid email' })
+	@IsString({ message: 'Email must be a string' })
 	email: string;
 
 	@IsString()

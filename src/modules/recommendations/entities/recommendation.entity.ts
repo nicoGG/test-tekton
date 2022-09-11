@@ -48,8 +48,9 @@ export interface Track {
 }
 
 export const omitFromAlbum = 'available_markets' || 'type' || 'total_tracks' || 'release_date_precision' || 'album_type';
+export const omitFromAlbumArr = ['available_markets', 'type', 'total_tracks', 'release_date_precision', 'album_type'];
 
-export interface CustomAlbum extends Omit<Album, typeof omitFromAlbum> {}
+export interface CustomAlbum extends Omit<Album, 'available_markets' | 'type' | 'total_tracks' | 'release_date_precision' | 'album_type'> {}
 
 export interface Album {
 	album_type: AlbumType;
@@ -114,26 +115,25 @@ export enum TrackType {
 
 export class Convert {
 	private static toRR(track: Partial<CustomTrack>): CustomTrack {
-		return <CustomTrack>_.pick(track, typeof pickFromTrack && 'album');
+		return <CustomTrack>_.pick(track, ['id', 'uri', 'name', 'preview_url', 'artists', 'duration_ms', 'album']);
 	}
 
 	private static quitAMarketsFromTrack(track: CustomTrack): CustomTrack {
 		return {
 			...track,
-			album: _.omit(track.album, omitFromAlbum),
+			album: _.omit(track.album, 'type' || 'available_markets' || 'total_tracks' || 'release_date_precision' || 'album_type'),
 		};
 	}
 
 	public static responseRecommendationToCustomRecommendation(res: ResponseRecommendation): CustomRecommendation {
 		const sample = _.sample(res.tracks);
 		const principal = this.quitAMarketsFromTrack(sample);
-		const tracks = _.without(res.tracks, sample).map(s => this.toRR(this.quitAMarketsFromTrack(s)));
+		const tracks = _.without(res.tracks, sample).map(s => {
+			const track = this.quitAMarketsFromTrack(s);
+			return this.toRR(track);
+		});
 		const seeds: CustomSeed[] = _.map(res.seeds, (seed: Seed) => _.pick(seed, ['type', 'id']));
-		return {
-			tracks,
-			principalTrack: this.toRR(principal),
-			genres: seeds,
-		};
+		return { tracks, principalTrack: this.toRR(principal), genres: seeds };
 	}
 
 	public static recommendationToJson(value: ResponseRecommendation): string {

@@ -12,6 +12,15 @@ import { SpotifyGuard } from './guards/spotify-access.guard';
 export class AuthController {
 	constructor(private readonly authService: AuthService) {}
 
+	async generateRandomString(length: number) {
+		let text = '';
+		const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+		for (let i = 0; i < length; i++) {
+			text += possible.charAt(Math.floor(Math.random() * possible.length));
+		}
+		return text;
+	}
+
 	@Public()
 	@Post('login')
 	login(@Body() loginDto: LoginDto) {

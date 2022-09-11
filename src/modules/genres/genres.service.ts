@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
-import { CACHE_MANAGER, HttpException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CACHE_MANAGER, Inject, Injectable, UnauthorizedException, BadRequestException, HttpException } from '@nestjs/common';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { AxiosRequestHeaders } from 'axios';
 import { axiosGenreResponse, GenreType } from './interfaces';
@@ -25,7 +25,7 @@ export class GenresService {
 		return this.httpService.get<axiosGenreResponse>('/recommendations/available-genre-seeds', cfg).pipe(
 			catchError(err => {
 				if (err?.response?.status === 401) throw new UnauthorizedException(err?.response?.statusText);
-				throw new HttpException(err, err?.response?.status);
+				throw new HttpException(err?.response?.statusText, err?.response?.status);
 			}),
 			map(response => {
 				this.cacheManager.set('genres', JSON.stringify(response.data.genres), { ttl: 7200 });

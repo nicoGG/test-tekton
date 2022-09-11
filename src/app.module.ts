@@ -16,8 +16,8 @@ import * as redisStore from 'cache-manager-redis-store';
 			isGlobal: true,
 			host: process.env.REDIS_HOST,
 			port: process.env.REDIS_PORT,
-			ttl: 3600,
-			isCacheableValue: (value) => {
+			ttl: 1800,
+			isCacheableValue: value => {
 				return value !== null;
 			},
 		}),
@@ -42,7 +42,6 @@ import * as redisStore from 'cache-manager-redis-store';
 				HOST_SPOTIFY: Joi.string().required(),
 				TOKEN_SPOTIFY: Joi.string().required(),
 			}),
-
 		}),
 		TypeOrmModule.forRoot({
 			type: 'postgres',
@@ -54,5 +53,4 @@ import * as redisStore from 'cache-manager-redis-store';
 	],
 	providers: [],
 })
-export class AppModule {
-}
+export class AppModule {}

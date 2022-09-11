@@ -32,13 +32,14 @@ export class AuthService {
 
 	async loginUser(loginDto: LoginDto) {
 		const { username, password } = loginDto;
-		const redisUser = await this.cacheManager.get<string>(`${username}_${password}`);
+		const redisUser = await this.cacheManager.get<string>(`logged_user_${username}`);
+		console.log('redisUser', redisUser);
 		if (redisUser) return JSON.parse(redisUser);
 		const foundUser = await this.userRepository.findOneBy({ username: username });
 		if (!foundUser) throw new NotFoundException('User not found');
 		if (!(await BcryptPassword.compare(foundUser.password, password))) throw new UnauthorizedException('Invalid password');
 		const token = this.createJwt(foundUser).token;
-		await this.cacheManager.set(`logged_user_${foundUser.id}`, JSON.stringify({ token }), { ttl: 60 * 60 * 24 });
+		await this.cacheManager.set(`logged_user_${username}`, JSON.stringify({ token }), { ttl: 60 * 60 });
 		return { token };
 	}
 
@@ -55,46 +56,32 @@ export class AuthService {
 
 	async registerUser(createUserDto: CreateUserDto) {
 		try {
-			const foundUser = await this.userRepository.findOneBy({
-				username: createUserDto.username,
-			});
+			const foundUser = await this.userRepository.findOneBy({ username: createUserDto.username });
 			if (foundUser) throw new UnauthorizedException('User already exists');
 			const { password, ...userData } = createUserDto;
 			const hashedPass = await BcryptPassword.hash(password, 10);
-			const user = this.userRepository.create({
-				...userData,
-				password: hashedPass,
-			});
+			const user = this.userRepository.create({ ...userData, password: hashedPass });
 			await this.userRepository.save(user);
 			delete user.password;
-			return {
-				...user,
-				token: this.createJwt(user).token,
-			};
+			return { ...user, token: this.createJwt(user).token };
 		} catch (error) {
 			this.handleDBErrors(error);
 		}
 	}
 
 	async checkAuthStatus(user: UserEntity) {
-		return {
-			...user,
-			token: this.createJwt(user).token,
-		};
+		return { ...user, token: this.createJwt(user).token };
 	}
 
 	async checkAuthStatusOk(token: string) {
 		const payload = await this.verifyAndDecodePayload(token);
 		const user = await this.validateJwtPayload(payload);
 		if (!user) throw new UnauthorizedException('Invalid token, user not found');
-		return {
-			...user,
-			token: this.createJwt(user).token,
-		};
+		return { ...user, token: this.createJwt(user).token };
 	}
 
 	async verifyAndDecodePayload(token: string): Promise<JwtPayload> {
-		const secret = this.configService.get('JWT_SECRET');
+		const secret = this.configService.get<string>('JWT_SECRET');
 		const verified = await this.jwtService.verify(token, { secret });
 		return verified as JwtPayload;
 	}
@@ -107,7 +94,7 @@ export class AuthService {
 	}
 
 	createJwt(user: UserEntity): { data: JwtPayload; token: string } {
-		const expiresIn = Number(process.env.JWT_EXPIRES_IN) || this.configService.get<number>('JWT_EXPIRES_IN');
+		const expiresIn = Number(process.env.JWT_EXPIRES_IN) || this.configService.get('JWT_EXPIRES_IN');
 		let expiration: Date | undefined;
 		if (expiresIn) {
 			expiration = new Date();

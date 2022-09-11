@@ -8,7 +8,6 @@ import {
 	UnauthorizedException,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { AxiosRequestHeaders } from 'axios';
 import { Convert, CustomRecommendation, ResponseRecommendation } from './entities/recommendation.entity';
@@ -49,7 +48,7 @@ export class RecommendationsService {
 		return this.httpService.get<ResponseRecommendation>(`/recommendations?seed_genres=${genres}`, { headers }).pipe(
 			catchError(err => {
 				if (err?.response?.status === 401) throw new UnauthorizedException(err?.response?.statusText);
-				throw new HttpException(err, err?.response?.status);
+				throw new HttpException(err?.response?.statusText, err?.response?.status);
 			}),
 			map(response => {
 				if (response.status === 200) {
