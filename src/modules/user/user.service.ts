@@ -57,6 +57,7 @@ export class UserService {
 			user.favorites = favs;
 			await this.cacheManager.set<string>(`current_user_${user.id}`, JSON.stringify(user), { ttl: 300 });
 			await this.userRepository.save(user);
+			console.log(user);
 			return user;
 		} catch (error) {
 			this.handleDBException(error);

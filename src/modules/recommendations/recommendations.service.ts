@@ -44,6 +44,7 @@ export class RecommendationsService {
 		}
 		const redisToken = await this.cacheManager.get<string>('spotify_access_token');
 		const headers: AxiosRequestHeaders = { Authorization: `Bearer ${redisToken}` };
+		if (genres.length === 0) throw new BadRequestException('You must select at least 1 genre');
 		const genresLength = genres.split(',').length;
 		if (genresLength > 5) throw new BadRequestException('You can only select up to 5 genres');
 		return this.httpService.get<ResponseRecommendation>(`/recommendations?seed_genres=${genres}`, { headers }).pipe(
