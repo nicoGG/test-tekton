@@ -16,7 +16,6 @@ export class SpotifyGuard implements CanActivate {
 	}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		// await this.cacheManager.del('spotify_access_token');
 		const token = await this.cacheManager.get<string>('spotify_access_token');
 		if (token) return true;
 		const [newToken] = await this.getNewToken();
