@@ -3,38 +3,46 @@ version: '3.9'
 
 # The containers that compose the project
 services:
-  #  nestjs_test_api:
-  #    # Build the image from the Dockerfile
-  #    build:
-  #      context: .
-  #      dockerfile: Dockerfile_dev
-  #    # The port to expose
-  #    ports:
-  #      - '3000:3000'
-  #    networks:
-  #      - some-network
-  #    # The environment variables to use
-  #    environment:
-  #      NODE_ENV: development
-  #      PORT: 3000
-  #      DB_HOST: postgres
-  #      DB_USER: postgres
-  #      DB_PASSWORD: postgres
-  #      DB_PORT: 5432
-  #      DB_NAME: postgres
-  #      HOST_API: http://localhost:3000/api
-  #      HOST_SPOTIFY: https://api.spotify.com/v1
-  #      TOKEN_SPOTIFY: BQCNBjdHH-qqVUYgl78Ixbgc6hqFgwL53AwCoKTk8d2khKPZEry8GQCUfoXRcrMHdUq2SUPrKHml8WM9ljiI_mQ1Xr0sZBlt49nhE156ZWjlnq3VkEMdzgHjAdiJepstfIH6L8pjDH8NlNhUZphG3vFPi1MZS0HNxSqYBTeyZw_fJdpUKsr3rz4J8KN3gWb_MIo
-  #      JWT_SECRET: VKJdlEb6iYHcK7Q3NX4GXjrOVxxWKDEKRiJyHwzYcyVqqClW22o2gpTCqD3Tjcc1q4MhncMQFdbK32wmejD87ICEofmIQfWkJGIC
-  #      JWT_EXPIRES_IN: 3600
-  #    # The command to run
-  #    command: npm run start:dev
-  #    # The dependencies of the container
-  #    #    volumes:
-  #    #      - /home/node/app/node_modules
-  #
-  #    depends_on:
-  #      - postgres_test_db
+  nestjs_test_api:
+    # Build the image from the Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile_dev
+    # The port to expose
+    ports:
+      - '3000:3000'
+    networks:
+      - some-network
+    # The environment variables to use
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: postgres_test_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_PORT: 5432
+      DB_NAME: postgres
+      HOST_API: http://localhost:3000/api
+      HOST_SPOTIFY: https://api.spotify.com/v1
+      TOKEN_SPOTIFY:
+      JWT_SECRET: VKJdlEb6iYHcK7Q3NX4GXjrOVxxWKDEKRiJyHwzYcyVqqClW22o2gpTCqD3Tjcc1q4MhncMQFdbK32wmejD87ICEofmIQfWkJGIC
+      JWT_EXPIRES_IN: 86400
+      SPOTIFY_CLIENT_ID: 4c83671ab50e4cad9388feba9974f8a8
+      SPOTIFY_CLIENT_SECRET: c75a60c8debc46828b0283478e5c2164
+      SESSION_SECRET: VKJdlEb6iYHcK7Q3NX4GXjrOVxxWKDEKRiJyHwzYcyVqqClW22o2gpTCqD3Tjcc1q4MhncMQFdbK32wmejD87ICEofmIQfWkJGIC
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redis
+
+    # The command to run
+    command: npm start
+    # The dependencies of the container
+    #    volumes:
+    #      - /home/node/app/node_modules
+
+    depends_on:
+      - postgres_test_db
+      - redis
   redis:
     image: redis:alpine
     ports:
@@ -52,7 +60,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     ports:
-      - "65432:5432"
+      - '65432:5432'
     networks:
       - some-network
     container_name: postgres_test_db
