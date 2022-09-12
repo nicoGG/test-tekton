@@ -33,13 +33,12 @@ export class AuthService {
 	async loginUser(loginDto: LoginDto) {
 		const { username, password } = loginDto;
 		const redisUser = await this.cacheManager.get<string>(`logged_user_${username}`);
-		console.log('redisUser', redisUser);
 		if (redisUser) return JSON.parse(redisUser);
 		const foundUser = await this.userRepository.findOneBy({ username: username });
 		if (!foundUser) throw new NotFoundException('User not found');
 		if (!(await BcryptPassword.compare(foundUser.password, password))) throw new UnauthorizedException('Invalid password');
 		const token = this.createJwt(foundUser).token;
-		await this.cacheManager.set(`logged_user_${username}`, JSON.stringify({ token }), { ttl: 60 * 60 });
+		await this.cacheManager.set(`logged_user_${username}`, JSON.stringify({ token }), { ttl: 150 });
 		return { token };
 	}
 
